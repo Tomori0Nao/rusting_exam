@@ -40,8 +40,44 @@ enum ParsePersonError {
 // 6. If parsing the age fails, return the error `ParsePersonError::ParseInt`.
 impl FromStr for Person {
     type Err = ParsePersonError;
+    fn from_str(s: &str) -> Result<Person, Self::Err> {
+        let mut split = s.split(',');
+        let name = split.next().unwrap_or("");
+        let age = split.next().unwrap_or("");
+        let tail = split.next();
+        if name.is_empty() {
+            if age.is_empty() && tail.is_some() {
+                return Err(ParsePersonError::NoName);
+            } else if age.is_empty() && s.contains(',') {
+                return Err(ParsePersonError::NoName);
+            } else if age.is_empty() && !s.contains(',') {
+                return Err(ParsePersonError::BadLen);
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {}
+            } else {
+                return Err(ParsePersonError::NoName);
+            }
+        } else if age.is_empty() {
+            if !s.contains(',') {
+                return Err(ParsePersonError::BadLen);
+            } else {
+                return Err(ParsePersonError::ParseInt(
+                    age.parse::<u8>().unwrap_err(),
+                ));
+            }
+        } else if age.parse::<usize>().is_err() {
+            return Err(ParsePersonError::ParseInt(
+                age.parse::<u8>().unwrap_err(),
+            ));
+        }
+        if tail.is_some() {
+             Err(ParsePersonError::BadLen)
+        } else {
+             Ok(Person {
+                name: String::from(name),
+                age: age.parse::<u8>().unwrap(),
+            })
+        }
+    }
 }
 
 fn main() {
